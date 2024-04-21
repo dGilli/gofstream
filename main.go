@@ -1,9 +1,12 @@
 package main
 
 import (
+	"crypto/rand"
 	"fmt"
+	"io"
 	"log"
 	"net"
+	"time"
 )
 
 type (
@@ -38,7 +41,32 @@ func (fs *FileServer) readLoop(conn net.Conn) {
     }
 }
 
+func sendFile(size int) error {
+    file := make([]byte, size)
+    _, err := io.ReadFull(rand.Reader, file)
+    if err != nil {
+        return err
+    }
+
+    conn, err := net.Dial("tcp", ":8000")
+    if err != nil {
+        return err
+    }
+
+    n, err := conn.Write(file)
+    if err != nil {
+        return err
+    }
+    fmt.Printf("written %d bytes over the network\n", n)
+    return nil
+}
+
 func main() {
+    go func() {
+        time.Sleep(4 * time.Second)
+        sendFile(4000)
+    }()
+
     server := &FileServer{}
     server.start()
 }
